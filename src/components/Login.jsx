@@ -1,165 +1,105 @@
-import styled from "styled-components";
+import React, { useContext, useState } from "react";
+import { TailSpin } from "react-loader-spinner";
+import { Link, useNavigate } from "react-router-dom";
+import {query, where, getDocs} from 'firebase/firestore'
+import { usersRef } from "./firebase/firebase";
+import { Appstate } from "../App";
+import bcrypt from 'bcryptjs'
+import swal from "sweetalert";
 
-const Login = (props) => {
+const Login = () => {
+  const navigate = useNavigate();
+  const useAppstate = useContext(Appstate);
+  const [form, setForm] = useState({
+    mobile: "",
+    password: ""
+  });
+  const [loading, setLoading] = useState(false);
+
+  const login = async () => {
+    setLoading(true);
+    try {
+      const quer = query(usersRef, where('mobile', '==', form.mobile))
+      const querySnapshot = await getDocs(quer);
+
+      querySnapshot.forEach((doc) => {
+        const _data = doc.data();
+        const isUser = bcrypt.compareSync(form.password, _data.password);
+        if(isUser) {
+          useAppstate.setLogin(true);
+          useAppstate.setUserName(_data.name);
+          swal({
+            title: "Logged In",
+            icon: "success",
+            buttons: false,
+            timer: 3000
+          })
+          navigate('/')
+        } else {
+          swal({
+            title: "Invalid Credentials",
+            icon: "error",
+            buttons: false,
+            timer: 3000
+          })
+        }
+      })
+    } catch (error) {
+      swal({
+        title: error.message,
+        icon: "error",
+        buttons: false,
+        timer: 3000
+      })
+    }
+    setLoading(false);
+  }
+
   return (
-    <Container>
-      <Nav>
-        <a href="/">
-          <img src="/images/login-logo.svg" alt="" />
-        </a>
-        <div>
-          <Join>Join now</Join>
-          <SignIn>Sign in</SignIn>
+    <div className="w-full flex flex-col mt-8 items-center">
+      <h1 className="text-xl font-bold">Login</h1>
+      <div class="p-2 w-full md:w-1/3">
+        <div class="relative">
+          <label for="message" class="leading-7 text-sm text-gray-300">
+            Mobile No.
+          </label>
+          <input
+            type={"number"}
+            id="message"
+            name="message"
+            value={form.mobile}
+            onChange={(e) => setForm({ ...form, mobile: e.target.value })}
+            class="w-full bg-white rounded border border-gray-300 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+          />
         </div>
-      </Nav>
-      <Section>
-        <Hero>
-          <h1>Welcome to your professional community</h1>
-          <img src="/images/login-hero.svg" alt="" />
-        </Hero>
-        <Form>
-          <Google>
-            <img src="/images/google.svg" alt="" />
-            Sign in with Google
-          </Google>
-        </Form>
-      </Section>
-    </Container>
+      </div>
+      <div class="p-2 w-full md:w-1/3">
+        <div class="relative">
+          <label for="message" class="leading-7 text-sm text-gray-300">
+            Password
+          </label>
+          <input
+            id="message"
+            name="message"
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            class="w-full bg-white rounded border border-gray-300 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+          />
+        </div>
+      </div>
+      <div class="p-2 w-full">
+        <button
+        onClick={login}
+          class="flex mx-auto text-white bg-green-600 border-0 py-2 px-8 focus:outline-none hover:bg-green-700 rounded text-lg"
+        >
+          {loading ? <TailSpin height={25} color="white" /> : "Login"}
+        </button>
+      </div>
+      <div>
+        <p>Do not have account? <Link to={'/signup'}><span className="text-blue-500">Sign Up</span></Link></p>
+      </div>
+    </div>
   );
 };
 
-const Container = styled.div`
-  padding: 0px;
-`;
-
-const Nav = styled.nav`
-  max-width: 1128px;
-  margin: auto;
-  padding: 12px 0 16px;
-  display: flex;
-  align-items: center;
-  position: relative;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-  & > a {
-    width: 135px;
-    height: 34px;
-    @media (max-width: 768px) {
-      padding: 0 5px;
-    }
-  }
-`;
-
-const Join = styled.a`
-  font-size: 16px;
-  padding: 10px 12px;
-  text-decoration: none;
-  border-radius: 4px;
-  color: rgba(0, 0, 0, 0.6);
-  margin-right: 12px;
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.08);
-    color: rgba(0, 0, 0, 0.9);
-    text-decoration: none;
-  }
-`;
-
-const SignIn = styled.a`
-  box-shadow: inset 0 0 0 1px #0a66c2;
-  color: #0a66c2;
-  border-radius: 24px;
-  transition-duration: 167ms;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 40px;
-  padding: 10px 24px;
-  text-align: center;
-  background-color: rgba(0, 0, 0, 0);
-  &:hover {
-    background-color: rgba(112, 181, 249, 0.15);
-    color: #0a66c2;
-    text-decoration: none;
-  }
-`;
-
-const Section = styled.section`
-  display: flex;
-  align-content: start;
-  min-height: 700px;
-  padding-bottom: 138px;
-  padding-top: 40px;
-  padding: 60px 0;
-  position: relative;
-  flex-wrap: wrap;
-  width: 100%;
-  max-width: 1128px;
-  align-items: center;
-  margin: auto;
-  @media (max-width: 768px) {
-    margin: auto;
-    min-height: 0px;
-  }
-`;
-
-const Hero = styled.div`
-  width: 100%;
-  h1 {
-    padding-bottom: 0;
-    width: 55%;
-    font-size: 56px;
-    color: #2977c9;
-    font-weight: 200;
-    line-height: 70px;
-    @media (max-width: 768px) {
-      text-align: center;
-      font-size: 20px;
-      width: 100%;
-      line-height: 2;
-    }
-  }
-  img {
-    /* z-index: -1; */
-    width: 700px;
-    height: 670px;
-    position: absolute;
-    bottom: -2px;
-    right: -150px;
-    @media (max-width: 768px) {
-      top: 230px;
-      width: initial;
-      position: initial;
-      height: initial;
-    }
-  }
-`;
-
-const Form = styled.div`
-  margin-top: 100px;
-  width: 408px;
-  @media (max-width: 768px) {
-    margin-top: 20px;
-  }
-`;
-
-const Google = styled.button`
-  display: flex;
-  justify-content: center;
-  background-color: #fff;
-  align-items: center;
-  height: 56px;
-  width: 100%;
-  border-radius: 28px;
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 60%),
-    inset 0 0 0 2px rgb(0 0 0 / 0%) inset 0 0 0 1px rgb(0 0 0 / 0);
-  vertical-align: middle;
-  z-index: 0;
-  transition-duration: 167ms;
-  font-size: 20px;
-  color: rgba(0, 0, 0, 0.6);
-  &:hover {
-    background-color: rgba(207, 207, 207, 0.25);
-    color: rgba(0, 0, 0, 0.75);
-  }
-`;
-
-export default Login
+export default Login;
